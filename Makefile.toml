@@ -1,0 +1,18 @@
+
+[env]
+TARGET_DIR = "target/wasm32-unknown-unknown/release/"
+
+[tasks.release]
+dependencies = ["build", "bind"]
+
+[tasks.build]
+args = ["build", "--target", "wasm32-unknown-unknown", "--release"]
+command = "cargo"
+
+[tasks.bind]
+args = ["--out-dir", "${TARGET_DIR}", "--out-name", "wasm", "--target", "web", "--no-typescript", "${TARGET_DIR}${CARGO_MAKE_CRATE_NAME}.wasm"]
+command = "wasm-bindgen"
+
+[tasks.serve]
+command = "basic-http-server"
+dependencies = ["release"]
