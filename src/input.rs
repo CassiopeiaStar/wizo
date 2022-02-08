@@ -7,6 +7,7 @@ pub struct InputState {
     pub right: bool,
     pub up: bool,
     pub down: bool,
+    pub attack: bool,
 }
 
 
@@ -23,6 +24,7 @@ pub fn game_input(
     let mut up = false;
     let mut down = false;
     let mut accept = false;
+    let mut attack = false;
     for gamepad in gamepads.iter().cloned() {
         if let Some(left_stick_x) = axes
             .get(GamepadAxis(gamepad, GamepadAxisType::LeftStickX)) {
@@ -49,18 +51,24 @@ pub fn game_input(
         if button_inputs.just_pressed(GamepadButton(gamepad,GamepadButtonType::South)) {
             accept = true;
         }
+        if button_inputs.just_pressed(GamepadButton(gamepad,GamepadButtonType::West)) {
+            attack = true;
+        }
     }
 
     if keyboard_input.pressed(KeyCode::A) {left = true;}
     if keyboard_input.pressed(KeyCode::D) {right = true;}
     if keyboard_input.pressed(KeyCode::W) {up = true;}
     if keyboard_input.pressed(KeyCode::S) {down = true;}
+    if keyboard_input.pressed(KeyCode::F) {attack = true;}
+
     *input_state = InputState {
         left,
         right,
         up,
         down,
         accept,
+        attack,
     };
 }
 

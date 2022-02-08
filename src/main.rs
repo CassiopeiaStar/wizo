@@ -4,7 +4,12 @@ mod menu;
 mod game;
 mod input;
 mod animation;
+//mod animations;
 mod player;
+mod movement;
+mod resources;
+mod hitboxes;
+mod components;
 
 mod constants;
 
@@ -19,6 +24,7 @@ fn main() {
         .insert_resource(WindowDescriptor{
             ..Default::default()
         })
+        .insert_resource(ClearColor(constants::COLORS[(16*2)+12]))
         .add_state(GameState::Game)
         .add_plugins(DefaultPlugins)
         .add_plugin(menu::MenuPlugin)

@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone,Default)]
 pub struct Frame {
     pub duration:   f32,
-    pub sprite: TextureAtlasSprite,
-    pub atlas:  Handle<TextureAtlas>,
+    pub sprite: Option<TextureAtlasSprite>,
+    pub atlas:  Option<Handle<TextureAtlas>>,
 }
 
 #[derive(Component,Clone)]
@@ -28,9 +28,9 @@ impl Animation {
 
 pub fn animation_system(
     time: Res<Time>,
-    mut query: Query<(&mut Animation, &mut TextureAtlasSprite, &mut Handle<TextureAtlas>)>
+    mut query: Query<(&mut Animation, Option<&mut TextureAtlasSprite>, Option<&mut Handle<TextureAtlas>>)>
 ) {
-    for (mut animation,mut sprite,mut atlas) in query.iter_mut() {
+    for (mut animation,sprite,atlas) in query.iter_mut() {
         
         //increment the timer to see if the frame is over
         animation.timer.tick(time.delta());
@@ -44,8 +44,22 @@ pub fn animation_system(
             animation.timer = Timer::from_seconds(animation.frames[animation.index].duration,false);
 
             //set the sprite/atlas to the new frame
-            *sprite = animation.frames[animation.index].sprite.clone();
-            *atlas = animation.frames[animation.index].atlas.clone();
+            if let Some(new_sprite) = animation.frames[animation.index].sprite.clone() {
+                if let Some(mut sprite) = sprite {
+                    *sprite = new_sprite;
+                } else {
+                    //maybe push a new sprite component if there is not one already?
+                }
+            }
+
+            //set the sprite/atlas to the new frame
+            if let Some(new_atlas) = animation.frames[animation.index].atlas.clone() {
+                if let Some(mut atlas) = atlas {
+                    *atlas = new_atlas;
+                } else {
+                    //maybe push a new sprite component if there is not one already?
+                }
+            }
         }
     }
 }
