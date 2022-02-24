@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_asset_ron::RonAssetPlugin;
 
 mod menu;
 mod game;
@@ -30,6 +31,9 @@ fn main() {
         .insert_resource(ClearColor(constants::COLORS[(16*2)+12]))
         .add_state(GameState::Game)
         .add_plugins(DefaultPlugins)
+        .add_plugin(
+            RonAssetPlugin::<chunks::ChunkMap>::new(&["chunkmap"])
+        )
         .add_plugin(menu::MenuPlugin)
         .add_plugin(game::GamePlugin)
         .run();

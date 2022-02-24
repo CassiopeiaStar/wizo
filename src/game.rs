@@ -8,6 +8,8 @@ use crate::player::*;
 use crate::movement::*;
 use crate::resources::*;
 use crate::chunks::*;
+use crate::tile_factory::*;
+use crate::hitboxes::*;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq, SystemLabel)]
 struct PreUpdate;
@@ -39,8 +41,9 @@ impl Plugin for GamePlugin {
     }
 }
 
-struct GameData {
+pub struct GameData {
     entities: Vec<Entity>,
+    pub chunkmap_handle: Handle<ChunkMap>,
 }
 
 
@@ -50,6 +53,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
+
 
     let atlas_map = AtlasMap::load(&asset_server,&mut texture_atlases);
     let animations = AnimationMap::load(&atlas_map);
@@ -75,17 +79,15 @@ fn setup(
     */
 
     let player_ent = cmd.spawn_bundle(PlayerBundle::new(&animations,Transform{
-        translation:Vec3::new(64.,64.,1.),
+        translation:Vec3::new(0.,0.,1.),
         ..Default::default()
     })).id();
-
-    //load_chunk(&mut cmd,&atlas_map,(0,0));
-    //load_chunk(&mut cmd,&atlas_map,(1,0));
-    //load_chunk(&mut cmd,&atlas_map,(0,-1));
-    //load_chunk(&mut cmd,&atlas_map,(1,-1));
+    
+    let chunkmap_handle: Handle<ChunkMap> = asset_server.load("map1.chunkmap");
 
     let mut game_data = GameData {
         entities: vec![],
+        chunkmap_handle
     };
 
     game_data.entities.push(player_ent);
@@ -95,7 +97,7 @@ fn setup(
     cmd.insert_resource(atlas_map);
     cmd.insert_resource(ChunkManager{
         loaded_chunks: vec![],
-        active_chunk: (0,0),
+        active_chunk: (10,10),
         player_chunk: (0,0),
     })
 }
