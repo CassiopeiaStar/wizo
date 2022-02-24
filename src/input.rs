@@ -60,7 +60,7 @@ pub fn game_input(
     if keyboard_input.pressed(KeyCode::D) {right = true;}
     if keyboard_input.pressed(KeyCode::W) {up = true;}
     if keyboard_input.pressed(KeyCode::S) {down = true;}
-    if keyboard_input.pressed(KeyCode::F) {attack = true;}
+    if keyboard_input.just_pressed(KeyCode::F) {attack = true;}
 
     *input_state = InputState {
         left,

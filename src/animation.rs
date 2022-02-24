@@ -1,64 +1,125 @@
 use bevy::prelude::*;
+use crate::components::*;
 
 #[derive(Clone,Default)]
 pub struct Frame {
-    pub duration:   f32,
-    pub sprite: Option<TextureAtlasSprite>,
-    pub atlas:  Option<Handle<TextureAtlas>>,
+    pub start:   f32,
+    pub actions: Vec<AnimAction>,
+}
+
+impl Frame {
+    pub fn new(start: f32,actions: Vec<AnimAction>) -> Self {
+        Self {
+            start,
+            actions
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum AnimAction {
+    UpdateSprite(TextureAtlasSprite),
+    UpdateAtlas(Handle<TextureAtlas>),
+    UpdateAttackBox(AttackBox),
+    UpdateHitBox(HitBox),
+    Repeat,
+    DespawnRecursive,
 }
 
 #[derive(Component,Clone)]
 pub struct Animation {
-    pub frames: Vec<Frame>,
-    pub timer: Timer,
-    pub index: usize,
+    frames: Vec<Frame>,
+    timer: f32,
+    previous_time: f32,
+    paused: bool,
 }
 
 impl Animation {
     pub fn new(frames: Vec<Frame>) -> Self {
-        let timer = Timer::from_seconds(0.,false);
         Self {
             frames,
-            timer,
-            index: 0,
+            timer: 0.,
+            previous_time: 0.,
+            paused: false,
         }
     }
 }
 
 
 pub fn animation_system(
+    mut cmd: Commands,
     time: Res<Time>,
-    mut query: Query<(&mut Animation, Option<&mut TextureAtlasSprite>, Option<&mut Handle<TextureAtlas>>)>
+    mut query: Query<(
+        Entity,
+        &mut Animation, 
+        Option<&mut TextureAtlasSprite>, 
+        Option<&mut Handle<TextureAtlas>>,
+        Option<&mut HitBox>,
+        Option<&mut AttackBox>,
+    )>
 ) {
-    for (mut animation,sprite,atlas) in query.iter_mut() {
-        
-        //increment the timer to see if the frame is over
-        animation.timer.tick(time.delta());
-        
-        //if frame is completed, increment the index to the next frame and update the spret/atlas
-        if animation.timer.finished()  {
-            //increment index to the next frame
-            animation.index = (animation.index + 1) % animation.frames.len();
-
-            //restart the timer to the new frame's duration
-            animation.timer = Timer::from_seconds(animation.frames[animation.index].duration,false);
-
-            //set the sprite/atlas to the new frame
-            if let Some(new_sprite) = animation.frames[animation.index].sprite.clone() {
-                if let Some(mut sprite) = sprite {
-                    *sprite = new_sprite;
-                } else {
-                    //maybe push a new sprite component if there is not one already?
+    for (ent,mut animation,mut sprite,mut atlas,mut hitbox,mut attackbox) in query.iter_mut() {
+        if !animation.paused {
+            //increment the timer to see if the frame is over
+            animation.previous_time = animation.timer;
+            animation.timer+=time.delta().as_secs_f32();
+            
+            let mut reset_animation = false;
+            let mut remaining_frames_found = false;
+            for frame in animation.frames.iter() {
+                if frame.start > animation.timer {
+                    remaining_frames_found = true;
+                }
+                if frame.start < animation.timer && frame.start >= animation.previous_time {
+                    for action in frame.actions.iter() {
+                        match action {
+                            AnimAction::UpdateSprite(new_sprite) => {
+                                if let Some(sprite) = sprite.as_deref_mut() {
+                                    *sprite = new_sprite.clone();
+                                } else {
+                                    cmd.entity(ent).insert(new_sprite.clone());
+                                }
+                            }
+                            AnimAction::UpdateAtlas(new_atlas) => {
+                                if let Some(atlas) = atlas.as_deref_mut() {
+                                    *atlas = new_atlas.clone();
+                                } else {
+                                    cmd.entity(ent).insert(new_atlas.clone());
+                                }
+                            }
+                            AnimAction::UpdateHitBox(new_hitbox) => {
+                                if let Some(hitbox) = hitbox.as_deref_mut() {
+                                    *hitbox = new_hitbox.clone();
+                                } else {
+                                    cmd.entity(ent).insert(new_hitbox.clone());
+                                }
+                            }
+                            AnimAction::UpdateAttackBox(new_attackbox) => {
+                                if let Some(attackbox) = attackbox.as_deref_mut() {
+                                    *attackbox = new_attackbox.clone();
+                                } else {
+                                    cmd.entity(ent).insert(new_attackbox.clone());
+                                }
+                            }
+                            AnimAction::Repeat => {
+                                reset_animation = true;
+                            }
+                            AnimAction::DespawnRecursive => {
+                                //println!("Removing {:?}",ent);
+                                cmd.entity(ent).despawn_recursive();
+                            }
+                        }
+                    }
                 }
             }
 
-            //set the sprite/atlas to the new frame
-            if let Some(new_atlas) = animation.frames[animation.index].atlas.clone() {
-                if let Some(mut atlas) = atlas {
-                    *atlas = new_atlas;
-                } else {
-                    //maybe push a new sprite component if there is not one already?
-                }
+            if reset_animation {
+                animation.timer = 0.;
+                animation.previous_time = 0.;
+            }
+
+            if !remaining_frames_found {
+                //animation.paused = true;
             }
         }
     }

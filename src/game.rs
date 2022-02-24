@@ -3,11 +3,11 @@ use bevy::prelude::*;
 
 use crate::GameState;
 use crate::input::*;
-use crate::animation::{Frame,animation_system,Animation};
+use crate::animation::*;
 use crate::player::*;
 use crate::movement::*;
 use crate::resources::*;
-use crate::components::*;
+use crate::chunks::*;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq, SystemLabel)]
 struct PreUpdate;
@@ -18,6 +18,7 @@ impl Plugin for GamePlugin {
         app
             .insert_resource(InputState::default())
             .add_system_set(SystemSet::on_enter(GameState::Game).with_system(setup))
+            //.add_stage_before(CoreStage::Update,"my_preupdate",SystemStage::parallel())
             .add_system_set(SystemSet::on_update(GameState::Game)
                 .label(PreUpdate)
                 .with_system(game_input)
@@ -27,6 +28,12 @@ impl Plugin for GamePlugin {
                 .after(PreUpdate)
                 .with_system(move_player)
                 .with_system(movement_system)
+                .with_system(player_attack_system)
+                //.with_system(debug_draw_hitboxes)
+                .with_system(height_system)
+                .with_system(chunk_switching)
+                .with_system(moving_camera)
+                .with_system(chunk_manager)
             )
             .add_system_set(SystemSet::on_exit(GameState::Game).with_system(cleanup));
     }
@@ -47,59 +54,35 @@ fn setup(
     let atlas_map = AtlasMap::load(&asset_server,&mut texture_atlases);
     let animations = AnimationMap::load(&atlas_map);
 
+    let mut camera = OrthographicCameraBundle::new_2d();
+    camera.transform.scale = Vec3::new(0.2,0.2,1.0);
+    let camera_ent = cmd.spawn_bundle(camera)
+        .insert(CameraDestination(Vec2::ZERO)).id();
 
-    cmd.spawn_bundle(OrthographicCameraBundle::new_2d());
-
-    let scale = Vec3::new(5.,5.,1.);
-
-    let player_ent = cmd.spawn_bundle(SpriteSheetBundle {
-        texture_atlas: atlas_map.get(&AtlasName::WalkingDown),
-        sprite: TextureAtlasSprite{
-            index: 0,
-            //custom_size: Some((1.,1.).into()),
-            ..Default::default()
-        },
-        transform:Transform {
-            translation: Vec3::new(0.,0.,1.),
-            scale,
+    /*
+    let boundary_ent = cmd.spawn_bundle(SpriteBundle {
+        texture: asset_server.load("sprites/boundary.png"),
+        transform: Transform{
+            translation:Vec3::new(0.,0.,-1.),
+            scale: Vec3::new(5.,5.,1.),
             ..Default::default()
         },
         ..Default::default()
-    })
-    .insert(Player::new())
-    .insert(Animation::new((0 as usize..=0).map(|i|{
-        Frame{
-            duration:0.1,
-            sprite: Some(TextureAtlasSprite {
-                index:i,
-                ..Default::default()
-            }),
-            atlas: Some(atlas_map.get(&AtlasName::WalkingDown))
-        }
-    }).collect()))
-    .insert(MovementBox(CollisionRect{
-        pos: Vec2::new(-4.,-16.),
-        size: Vec2::new(8.,8.)
-    }))
-    .insert(Velocity(Vec2::ZERO))
-    .id();
+    }).id();
 
-    cmd.spawn_bundle(SpriteSheetBundle {
-        texture_atlas: atlas_map.get(&AtlasName::Bush),
-        sprite: TextureAtlasSprite{
-            index:0,
-            ..Default::default()
-        },
-        transform:Transform{
-            translation: Vec3::new(-300.,0.,0.),
-            scale,
-            ..Default::default()
-        },
+
+    cmd.entity(camera_ent).push_children(&[boundary_ent]);
+    */
+
+    let player_ent = cmd.spawn_bundle(PlayerBundle::new(&animations,Transform{
+        translation:Vec3::new(64.,64.,1.),
         ..Default::default()
-    })
-    .insert(BlockBox(CollisionRect::centered(Vec2::ZERO,Vec2::new(10.,10.))))
-    ;
+    })).id();
 
+    //load_chunk(&mut cmd,&atlas_map,(0,0));
+    //load_chunk(&mut cmd,&atlas_map,(1,0));
+    //load_chunk(&mut cmd,&atlas_map,(0,-1));
+    //load_chunk(&mut cmd,&atlas_map,(1,-1));
 
     let mut game_data = GameData {
         entities: vec![],
@@ -110,6 +93,11 @@ fn setup(
     cmd.insert_resource(game_data);
     cmd.insert_resource(animations);
     cmd.insert_resource(atlas_map);
+    cmd.insert_resource(ChunkManager{
+        loaded_chunks: vec![],
+        active_chunk: (0,0),
+        player_chunk: (0,0),
+    })
 }
 
 fn cleanup(
@@ -122,74 +110,4 @@ fn cleanup(
     //cmd.remove_resource::<GameData>();
 }
 
-fn move_player(
-    //data: Res<GameData>
-    mut query: Query<(&mut Velocity,&mut Player,&mut Animation)>,
-    time: Res<Time>,
-    input_state: Res<InputState>,
-    animations: Res<AnimationMap>,
-) {
-    let mut left = input_state.left;
-    let mut right = input_state.right;
-    let mut up = input_state.up;
-    let mut down = input_state.down;
-    if left && right {left = false; right = false;}
-    if up && down {up = false; down = false;}
-    let speed = 3.;
-    for (mut vel,mut player,mut animation) in query.iter_mut() {
-        if left && up {
-            vel.0.x = -speed*0.707;
-            vel.0.y = speed*0.707;
-            player.update_state(PlayerState::Walking(Dir::W),&mut animation,&animations);
-        } else if left && down {
-            vel.0.x = -speed*0.707;
-            vel.0.y = -speed*0.707;
-            player.update_state(PlayerState::Walking(Dir::W),&mut animation,&animations);
-        } else if right && up {
-            vel.0.x = speed*0.707;
-            vel.0.y = speed*0.707;
-            player.update_state(PlayerState::Walking(Dir::E),&mut animation,&animations);
-        } else if right && down {
-            vel.0.x = speed*0.707;
-            vel.0.y = -speed*0.707;
-            player.update_state(PlayerState::Walking(Dir::E),&mut animation,&animations);
-        } else if left {
-            vel.0.x = -speed;
-            vel.0.y = 0.;
-            player.update_state(PlayerState::Walking(Dir::W),&mut animation,&animations);
-        } else if right {
-            vel.0.x = speed;
-            vel.0.y = 0.;
-            player.update_state(PlayerState::Walking(Dir::E),&mut animation,&animations);
-        } else if up {
-            vel.0.y = speed;
-            vel.0.x = 0.;
-            player.update_state(PlayerState::Walking(Dir::N),&mut animation,&animations);
-        } else if down {
-            vel.0.y = -speed;
-            vel.0.x = 0.;
-            player.update_state(PlayerState::Walking(Dir::S),&mut animation,&animations);
-        } else {
-            vel.0.x = 0.;
-            vel.0.y = 0.;
-            let dir = {
-                match player.state {
-                    PlayerState::Walking(dir) => dir,
-                    PlayerState::Standing(dir) => dir,
-                }
-            };
-            player.update_state(PlayerState::Standing(dir),&mut animation,&animations);
-        }
-    }
-}
 
-fn player_attack_system(
-    mut cmd: Commands,
-    input_state: Res<InputState>,
-    player: Query<Entity,With<Player>>,
-){
-    let player_ent = player.single();
-    if input_state.attack {
-        //cmd.spawn_bundle()
-    }
-}

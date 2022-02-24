@@ -4,12 +4,13 @@ mod menu;
 mod game;
 mod input;
 mod animation;
-//mod animations;
 mod player;
 mod movement;
 mod resources;
 mod hitboxes;
 mod components;
+mod tile_factory;
+mod chunks;
 
 mod constants;
 
@@ -22,6 +23,8 @@ pub enum GameState{
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor{
+            width: 1200.,
+            height: 800.,
             ..Default::default()
         })
         .insert_resource(ClearColor(constants::COLORS[(16*2)+12]))

@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 use crate::animation::*;
 use std::collections::HashMap;
+use crate::components::*;
 
 #[derive(Hash,PartialEq,Eq,Copy,Clone,Debug)]
 pub enum Dir {
@@ -54,10 +55,10 @@ impl AtlasMap {
                      "sprites/bush.png",
                      Vec2::new(16.,16.),1,1);
         load_texture(Sword,
-                     "sprites/sword.png",
-                     Vec2::new(32.,32.),3,1);
+                     "sprites/sword-angled.png",
+                     Vec2::new(48.,48.),5,1);
         load_texture(NoTex,
-                     "sprites/sword.png",
+                     "sprites/no-tex.png",
                      Vec2::new(16.,16.),1,1);
 
 
@@ -74,6 +75,7 @@ impl AtlasMap {
 pub enum AnimationName {
     Standing(Dir),
     Walking(Dir),
+    Sword,
 }
 
 pub struct AnimationMap(pub HashMap<AnimationName,Animation>);
@@ -84,94 +86,119 @@ impl AnimationMap {
 
         //get_atlas
         let ga = |atlas_name| {
-            Some(atlas_map.0.get(&atlas_name).unwrap().clone())
+            atlas_map.0.get(&atlas_name).unwrap().clone()
         };
+
+
 
         use AtlasName::*;
         hash_map.insert(AnimationName::Standing(Dir::E),
         Animation::new(vec![Frame{
-            duration: 100.,
-            sprite: Some(TextureAtlasSprite {
+            start:0.,
+            actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
                 index: 0,
                 ..Default::default()
             }),
-            atlas: ga(WalkingSide)
+            AnimAction::UpdateAtlas(ga(WalkingSide))]
         }]));
         hash_map.insert(AnimationName::Standing(Dir::W),
         Animation::new(vec![Frame{
-            duration: 100.,
-            sprite: Some(TextureAtlasSprite {
+            start:0.,
+            actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
                 index: 0,
                 flip_x: true,
                 ..Default::default()
             }),
-            atlas: ga(WalkingSide)
+            AnimAction::UpdateAtlas(ga(WalkingSide))]
         }]));
         hash_map.insert(AnimationName::Standing(Dir::S),
         Animation::new(vec![Frame{
-            duration: 100.,
-            sprite: Some(TextureAtlasSprite {
+            start:0.,
+            actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
                 index: 0,
                 ..Default::default()
             }),
-            atlas: ga(WalkingDown)
+            AnimAction::UpdateAtlas(ga(WalkingDown))]
         }]));
         hash_map.insert(AnimationName::Standing(Dir::N),
         Animation::new(vec![Frame{
-            duration: 100.,
-            sprite: Some(TextureAtlasSprite {
+            start:0.,
+            actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
                 index: 0,
                 ..Default::default()
             }),
-            atlas: ga(WalkingUp)
+            AnimAction::UpdateAtlas(ga(WalkingUp))]
         }]));
-        hash_map.insert(AnimationName::Walking(Dir::N),
-        Animation::new((0 as usize..=5).map(|i|{
-            Frame{
-                duration:0.1,
-                sprite: Some(TextureAtlasSprite{
-                    index:i,
-                    ..Default::default()
-                }),
-                atlas: ga(WalkingUp)
-            }
-        }).collect()));
-        hash_map.insert(AnimationName::Walking(Dir::S),
-        Animation::new((0 as usize..=5).map(|i|{
-            Frame{
-                duration:0.1,
-                sprite: Some(TextureAtlasSprite{
-                    index:i,
-                    ..Default::default()
-                }),
-                atlas: ga(WalkingDown)
 
-            }
-        }).collect()));
-        hash_map.insert(AnimationName::Walking(Dir::E),
-        Animation::new((0 as usize..=5).map(|i|{
-            Frame{
-                duration:0.1,
-                sprite: Some(TextureAtlasSprite{
-                    index:i,
-                    ..Default::default()
-                }),
-                atlas: ga(WalkingSide)
-            }
-        }).collect()));
-        hash_map.insert(AnimationName::Walking(Dir::W),
-        Animation::new((0 as usize..=5).map(|i|{
-            Frame{
-                duration:0.1,
-                sprite: Some(TextureAtlasSprite{
-                    index:i,
-                    flip_x: true,
-                    ..Default::default()
-                }),
-                atlas: ga(WalkingSide)
-            }
-        }).collect()));
-        dbg!();
+        let walking_anim = |atlas_name,flip_x| {
+            let mut frames: Vec<Frame> = (0 as usize..=5).map(|i|{
+                Frame{
+                    start:0.+(i as f32*0.1),
+                    actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
+                        index:i,
+                        flip_x,
+                        ..Default::default()
+                    }),
+                    AnimAction::UpdateAtlas(ga(atlas_name))]
+                }
+            }).collect();
+
+            frames.push(Frame{
+                start: 0.6,
+                actions: vec![AnimAction::Repeat]
+            });
+
+            Animation::new(frames)
+        };
+        hash_map.insert(AnimationName::Walking(Dir::N),walking_anim(WalkingUp,false));
+        hash_map.insert(AnimationName::Walking(Dir::S),walking_anim(WalkingDown,false));
+        hash_map.insert(AnimationName::Walking(Dir::E),walking_anim(WalkingSide,false));
+        hash_map.insert(AnimationName::Walking(Dir::W),walking_anim(WalkingSide,true));
+
+
+        hash_map.insert(
+            AnimationName::Sword,
+            Animation::new(vec![
+                Frame::new(0.0,vec![
+                    AnimAction::UpdateSprite(TextureAtlasSprite{
+                        index:0,
+                        ..Default::default()
+                    }),
+                    AnimAction::UpdateAtlas(ga(Sword)),
+                    AnimAction::UpdateAttackBox(AttackBox(
+                        CollisionRect::centered(Vec2::new(16.,0.),Vec2::new(16.,16.))
+                    ))
+                ]),
+                Frame::new(0.02,vec![
+                    AnimAction::UpdateSprite(TextureAtlasSprite{
+                        index:1,
+                        ..Default::default()
+                    })
+                ]),
+                Frame::new(0.05,vec![
+                    AnimAction::UpdateSprite(TextureAtlasSprite{
+                        index:2,
+                        ..Default::default()
+                    })
+                ]),
+                Frame::new(0.08,vec![
+                    AnimAction::UpdateSprite(TextureAtlasSprite{
+                        index:3,
+                        ..Default::default()
+                    })
+                ]),
+                Frame::new(0.1,vec![
+                    AnimAction::UpdateSprite(TextureAtlasSprite{
+                        index:4,
+                        ..Default::default()
+                    })
+                ]),
+                Frame::new(0.12,vec![
+                    AnimAction::DespawnRecursive
+                ])
+            ])
+        );
+
         AnimationMap(hash_map)
     }
 }

@@ -1,21 +1,24 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
+pub struct Height(pub f32);
+
+#[derive(Component)]
 pub struct Velocity(pub Vec2);
 
-#[derive(Component)]
+#[derive(Component,Debug)]
 pub struct BlockBox(pub CollisionRect);
 
-#[derive(Component)]
+#[derive(Component,Clone,Debug)]
 pub struct HitBox(pub CollisionRect);
 
-#[derive(Component)]
+#[derive(Component,Clone,Debug)]
 pub struct AttackBox(pub CollisionRect);
 
-#[derive(Component)]
+#[derive(Component,Debug)]
 pub struct MovementBox(pub CollisionRect);
 
-#[derive(Component,Debug)]
+#[derive(Component,Debug,Clone)]
 pub struct CollisionRect {
     //origin is bottom left of the collision rect
     //note that the origin for most entities in bevy is center
@@ -31,7 +34,11 @@ impl CollisionRect {
         }
     }
 
-    pub fn transformed(&self, transform: &Transform) -> CollisionRect {
+    pub fn center(&self) -> Vec2 {
+        self.pos+(self.size/2.)
+    }
+
+    pub fn transformed(&self, transform: &GlobalTransform) -> CollisionRect {
         let pos = transform.compute_matrix()
             .transform_point3(self.pos.extend(0.0))
             .truncate();
