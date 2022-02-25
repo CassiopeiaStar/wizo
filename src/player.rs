@@ -185,3 +185,21 @@ pub fn player_attack_system(
         }
     }
 }
+
+pub fn sign_reading_system(
+    input_state: ResMut<InputState>,
+    player: Query<(&Player,&GlobalTransform),Without<Sign>>,
+    signs: Query<(&Sign,&GlobalTransform),Without<Player>>
+) {
+    let distance = 20.;
+    if input_state.chat {
+        let (_,player_transform) = player.single();
+        for (sign,sign_transform) in signs.iter() {
+            if (player_transform.translation.x - sign_transform.translation.x).abs() < distance &&
+                (player_transform.translation.y - sign_transform.translation.y).abs() < distance {
+                    dbg!(sign);
+                }
+
+        }
+    }
+}

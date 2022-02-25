@@ -36,6 +36,7 @@ impl Plugin for GamePlugin {
                 .with_system(chunk_switching)
                 .with_system(moving_camera)
                 .with_system(chunk_manager)
+                .with_system(sign_reading_system)
             )
             .add_system_set(SystemSet::on_exit(GameState::Game).with_system(cleanup));
     }
@@ -53,8 +54,6 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-
-
     let atlas_map = AtlasMap::load(&asset_server,&mut texture_atlases);
     let animations = AnimationMap::load(&atlas_map);
 

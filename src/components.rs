@@ -7,6 +7,9 @@ pub struct Height(pub f32);
 pub struct Velocity(pub Vec2);
 
 #[derive(Component,Debug)]
+pub struct Sign(pub String);
+
+#[derive(Component,Debug)]
 pub struct BlockBox(pub CollisionRect);
 
 #[derive(Component,Clone,Debug)]

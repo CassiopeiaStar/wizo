@@ -1,4 +1,5 @@
 
+use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::resources::*;
 use crate::tile_factory::*;
@@ -9,11 +10,66 @@ use bevy::{
     utils::BoxedFuture
 };
 
+#[derive(serde::Deserialize,Clone)]
+pub enum TileKind {
+    Tree,
+    Bush,
+    Sign(String),
+}
+
+impl TileKind {
+    pub fn from_default_char(c:char) -> Option<Self> {
+        match c {
+            '#' => {
+                Some(TileKind::Bush)
+            }
+            'T' => {
+                Some(TileKind::Tree)
+            }
+            _ => {None}
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct ChunkData {
+    pub custom_tiles: HashMap<char,TileKind>,
+    pub tiles: String,
+}
+
+impl ChunkData {
+    pub fn as_kinds(&self) -> Vec<((u8,u8),TileKind)> {
+        let mut kinds:Vec<((u8,u8),TileKind)> = Vec::new();
+            let mut y:u8 = 0;
+            for line in self.tiles.lines() {
+                let line = line.trim();
+                if !line.is_empty() {
+                    let mut x:u8 = 0;
+                    for c in line.chars() {
+                        let mut tile: Option<TileKind> = self.custom_tiles.get(&c).cloned();
+                        if tile.is_none() {
+                            tile = TileKind::from_default_char(c);
+                        }
+                        if let Some(tile) = tile {
+                            kinds.push(((x,y),tile));
+                        }
+                        x+=1;
+                        if x > 13 {break;}
+                    }
+                    y+=1;
+                }
+                if y > 8 {break;}
+            }
+        kinds
+    }
+}
+
 #[derive(serde::Deserialize)]
 #[derive(TypeUuid)]
 #[uuid = "967e1ae8-95aa-11ec-b909-0242ac120002"]
 pub struct ChunkMap{
-    pub chunks: std::collections::HashMap<(i32,i32),String>,
+    pub chunks: std::collections::HashMap<(i32,i32),ChunkData>,
+    pub default_chunk: ChunkData,
 }
 
 pub struct ChunkManager {
@@ -56,81 +112,33 @@ pub fn load_chunk(
     .insert(Transform::from_translation(Vec3::new(
         chunk.0 as f32 * 224., chunk.1 as f32 * 144., chunk.1 as f32 *-0.5,
     ))).with_children(|root|{
-        let mut string_to_chunk = |string:&String| {
-            let mut y:u8 = 0;
-            for line in string.lines() {
-                let line = line.trim();
-                if !line.is_empty() {
-                    let mut x:u8 = 0;
-                    for c in line.chars() {
-                        match c {
-                            '#' => {
-                                root.spawn_bundle(BushBundle::new(&atlas_map,
-                                        tile_transform(x,y)));
-                            }
-                            'T' => {
-                                root.spawn_bundle(TreeBundle::new(&atlas_map,
-                                        tile_transform(x,y)));
-                            }
-                            '.' => {
-
-                            }
-                            _ => {dbg!(&c);}
-                        }
-                        x+=1;
-                        if x > 13 {break;}
+        let mut spawn_chunk = |chunk_data:&ChunkData| {
+            for ((x,y),tile_kind) in chunk_data.as_kinds() {
+                match tile_kind {
+                    TileKind::Tree => {
+                        root.spawn_bundle(TreeBundle::new(&atlas_map,
+                            tile_transform(x,y)));
                     }
-                    y+=1;
+                    TileKind::Bush => {
+                        root.spawn_bundle(BushBundle::new(&atlas_map,
+                            tile_transform(x,y)));
+                    }
+                    TileKind::Sign(text) => {
+                        root.spawn_bundle(SignBundle::new(
+                            &atlas_map,
+                            tile_transform(x,y),
+                            text
+                        ));
+                    }
                 }
-                if y > 8 {break;}
             }
         };
-        if let Some(chunk_string) = chunkmap.chunks.get(&chunk) {
-            string_to_chunk(chunk_string);
+        if let Some(chunk_data) = chunkmap.chunks.get(&chunk) {
+            spawn_chunk(&chunk_data);
+        } else {
+            spawn_chunk(&chunkmap.default_chunk);
         }
-        /*
-        match chunk {
-            (0,0) => {
-                string_to_chunk(r#"
-                    ##T##T.T.T.T.T
-                    T###T.T.T.T.T.
-                    ###T#.........
-                    ##T##.........
-                    ###T#.........
-                    ##T#..........
-                    ###T#.........
-                    #T###.T.T.T.T.
-                    ###T#T.T.T.T.T
-                "#.to_string())
-            }
-
-            (_,-3) => {
-                string_to_chunk(r#"
-                    .#.#.###......
-                    .###..#.......
-                    .#.#.###......
-                    ..............
-                    #.#..#..###.##
-                    #.#.#.#..#..#.
-                    ##..###..#..##
-                    #.#.#.#..#..#.
-                    #.#.#.#..#..##
-                "#.to_string())
-            }
-            _ => {}
-        }
-        */
     }).id()
-}
-
-pub fn chunk_map_debug(
-    chunk_assets: Res<Assets<ChunkMap>>,
-    game_data: Res<GameData>,
-) {
-    let chunkmap = chunk_assets.get(&game_data.chunkmap_handle);
-    if let Some(chunkmap) = chunkmap {
-        dbg!(&chunkmap.chunks);
-    }
 }
 
 pub fn chunk_manager(

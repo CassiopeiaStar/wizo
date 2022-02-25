@@ -19,6 +19,7 @@ pub enum AtlasName {
     Sword,
     NoTex,
     Tree,
+    Sign,
 }
 
 pub struct AtlasMap(pub HashMap<AtlasName,Handle<TextureAtlas>>);
@@ -64,6 +65,9 @@ impl AtlasMap {
         load_texture(Tree,
                      "sprites/tree.png",
                      Vec2::new(48.,48.),1,1);
+        load_texture(Sign,
+                     "sprites/sign.png",
+                     Vec2::new(16.,32.),1,1);
 
         AtlasMap(hash_map)
     }
