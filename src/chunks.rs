@@ -157,7 +157,7 @@ pub fn chunk_manager(
 
             //load neighboring chunks and confirm active chunk is loaded
             let (x,y) = chunk_manager.active_chunk;
-            let buffer = 2;
+            let buffer = 1;
             let mut neighbors = Vec::new();
             for i in (x-buffer)..=(x+buffer) {
                 for j in (y-buffer)..=(y+buffer) {

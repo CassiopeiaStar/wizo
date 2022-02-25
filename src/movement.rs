@@ -52,7 +52,7 @@ pub fn height_system(
     mut query: Query<(&Height,&mut Transform)>
 ) {
     for (height,mut trans) in query.iter_mut() {
-        trans.translation.z = 500.- ((trans.translation.y - height.0)*0.001);
+        trans.translation.z = 500.- ((trans.translation.y - height.0)*0.001) + (trans.translation.x*0.00001);
     }
 }
 
