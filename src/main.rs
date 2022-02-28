@@ -21,11 +21,13 @@ pub enum GameState{
     Game,
 }
 
+
 fn main() {
     App::new()
         .insert_resource(WindowDescriptor{
             width: 1200.,
             height: 800.,
+            //scale_factor_override:Some(scale as f64),
             ..Default::default()
         })
         .insert_resource(ClearColor(constants::COLORS[(16*2)+12]))
@@ -34,6 +36,7 @@ fn main() {
         .add_plugin(
             RonAssetPlugin::<chunks::ChunkMap>::new(&["chunkmap"])
         )
+        .add_plugin(bevy_ninepatch::NinePatchPlugin::<()>::default())
         .add_plugin(menu::MenuPlugin)
         .add_plugin(game::GamePlugin)
         .run();

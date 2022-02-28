@@ -2,6 +2,13 @@
 use lazy_static::lazy_static;
 use bevy::prelude::*;
 
+pub const TILE_SIZE: (f32,f32) = (16.,16.);
+pub const CHUNK_TILES: (u8,u8) = (14,9);
+pub const CHUNK_SIZE: (f32,f32) = (
+    CHUNK_TILES.0 as f32*TILE_SIZE.0,
+    CHUNK_TILES.1 as f32*TILE_SIZE.1
+);
+
 pub const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 pub const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 pub const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);

@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use crate::resources::*;
 use crate::tile_factory::*;
 use crate::game::GameData;
+use crate::constants::CHUNK_SIZE;
 use bevy::{
     asset::{AssetLoader,LoadContext,LoadedAsset},
     reflect::TypeUuid,
@@ -110,7 +111,11 @@ pub fn load_chunk(
 ) -> Entity{
     cmd.spawn().insert(GlobalTransform::default())
     .insert(Transform::from_translation(Vec3::new(
-        chunk.0 as f32 * 224., chunk.1 as f32 * 144., chunk.1 as f32 *-0.5,
+        chunk.0 as f32 * CHUNK_SIZE.0,
+        chunk.1 as f32 * CHUNK_SIZE.1, 
+        
+        //vary the Z level so tall entities on lower chunks render above
+        chunk.1 as f32 *-0.5,
     ))).with_children(|root|{
         let mut spawn_chunk = |chunk_data:&ChunkData| {
             for ((x,y),tile_kind) in chunk_data.as_kinds() {

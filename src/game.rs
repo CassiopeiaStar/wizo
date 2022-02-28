@@ -10,6 +10,7 @@ use crate::resources::*;
 use crate::chunks::*;
 use crate::tile_factory::*;
 use crate::hitboxes::*;
+use bevy_ninepatch::*;
 
 #[derive(Clone, Hash, Debug, PartialEq, Eq, SystemLabel)]
 struct PreUpdate;
@@ -53,14 +54,55 @@ fn setup(
     mut cmd: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut nine_patches: ResMut<Assets<NinePatchBuilder<()>>>,
 ) {
+    let _scenes: Vec<HandleUntyped> = asset_server.load_folder("sprites").unwrap();
+
     let atlas_map = AtlasMap::load(&asset_server,&mut texture_atlases);
     let animations = AnimationMap::load(&atlas_map);
+
+    let mut ui_camera = UiCameraBundle::default();
+    cmd.spawn_bundle(ui_camera);
 
     let mut camera = OrthographicCameraBundle::new_2d();
     camera.transform.scale = Vec3::new(0.2,0.2,1.0);
     let camera_ent = cmd.spawn_bundle(camera)
-        .insert(CameraDestination(Vec2::ZERO)).id();
+        .insert(MoveToActiveChunk).id();
+
+    let panel_texture_handle: Handle<Image> = asset_server.get_handle("sprites/gold-rimmed-box.png");
+
+    let nine_patch_handle = nine_patches.add(NinePatchBuilder::by_margins(8,8,8,8));
+
+    let nine_slice_ent = cmd.spawn_bundle(
+        // this component bundle will be detected by the plugin, and the 9-Patch UI element will be added as a child
+        // of this entity
+        NinePatchBundle {
+            style: Style {
+                position: Rect{
+                    left:Val::Percent(5.),
+                    bottom:Val::Percent(5.),
+                    right:Val::Percent(5.),
+                    top:Val::Percent(80.)
+                },
+                position_type: PositionType::Absolute,
+                size: Size::new(Val::Auto, Val::Auto),
+                ..Default::default()
+            },
+            nine_patch_data: NinePatchData {
+                nine_patch: nine_patch_handle,
+                texture: panel_texture_handle,
+                ..Default::default()
+            },
+            transform: Transform {
+                scale: Vec3::new(5.,5.,1.),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    ).id();
+
+
+
 
     /*
     let boundary_ent = cmd.spawn_bundle(SpriteBundle {
@@ -89,7 +131,7 @@ fn setup(
         chunkmap_handle
     };
 
-    game_data.entities.push(player_ent);
+    //game_data.entities.push(player_ent);
 
     cmd.insert_resource(game_data);
     cmd.insert_resource(animations);

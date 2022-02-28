@@ -12,3 +12,4 @@ ron = "0.7"
 serde = { version = "1", features = ["derive"] }
 anyhow = "*"
 bevy_asset_ron = "0.3.0"
+bevy_ninepatch = "0.6.0"

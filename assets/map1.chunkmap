@@ -1,16 +1,18 @@
 (
   default_chunk: ChunkData(
-    custom_tiles: {'T':Bush},
+    custom_tiles: {
+      'B':Bush
+    },
     tiles:r#"
-        TTTTTTTTTTTTTT
-        T............T
-        T............T
-        T............T
-        T............T
-        T............T
-        T............T
-        T............T
-        TTTTTTTTTTTTTT
+        BBBBBBBBBBBBBB
+        B............B
+        B............B
+        B............B
+        B............B
+        B............B
+        B............B
+        B............B
+        BBBBBBBBBBBBBB
     "#
   ),
   chunks: {

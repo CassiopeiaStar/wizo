@@ -479,6 +479,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ninepatch"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bd4c5cfa0f6c167369c262b89ae5ef49c69e515694395b8f5256caeda86d9c9"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3147,6 +3156,7 @@ dependencies = [
  "anyhow",
  "bevy",
  "bevy_asset_ron",
+ "bevy_ninepatch",
  "lazy_static",
  "ron",
  "serde",

@@ -37,7 +37,7 @@ impl AtlasMap {
             col: usize,
             rows: usize
         | {
-            let texture_handle: Handle<Image> = asset_server.load(path);
+            let texture_handle: Handle<Image> = asset_server.get_handle(path);
             let texture_atlas = TextureAtlas::from_grid(texture_handle, size,col,rows);
             hash_map.insert(atlas_name,texture_atlases.add(texture_atlas));
         };

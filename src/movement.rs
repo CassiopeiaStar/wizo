@@ -3,7 +3,21 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::player::*;
 use crate::chunks::ChunkManager;
+use crate::constants::CHUNK_SIZE;
 
+    
+fn chunk_to_location(chunk:(i32,i32))-> (f32,f32){
+    (chunk.0 as f32 * CHUNK_SIZE.0,
+    chunk.1 as f32 * CHUNK_SIZE.1)
+}
+
+fn location_to_chunk(location:(f32,f32))-> (i32,i32) {
+    let shift = |l:f32,i:f32| -> i32 {
+        ((l+(i/2.))/i).floor() as i32
+    };
+    (shift(location.0,CHUNK_SIZE.0),
+    shift(location.1,CHUNK_SIZE.1))
+}
 
 pub fn movement_system(
     mut velocities: Query<(&mut Velocity,&mut Transform,&GlobalTransform,&MovementBox)>,
@@ -58,62 +72,40 @@ pub fn height_system(
 
 
 pub fn chunk_switching(
-    windows: Res<Windows>,
+    //windows: Res<Windows>,
     player_query: Query<(&Transform,&Height),(With<Player>,Without<Camera>)>,
     mut chunk_manager: ResMut<ChunkManager>,
-    mut camera_query: Query<(&Transform,&mut CameraDestination),With<Camera>>,
+    //mut camera_query: Query<&mut CameraDestination,With<Camera>>,
 ) {
     let (player_transform,player_height) = player_query.single().clone();
-    let (camera_transform,mut camera_destination) = camera_query.single_mut();
-    let window = windows.get_primary().unwrap();
 
-    let buffer = 80.;
-    let arena_size = Vec2::new(window.width()-buffer,window.height()-buffer);
-
-    if camera_destination.0.x - player_transform.translation.x < 
-        -arena_size.x/2. * camera_transform.scale.x {
-        chunk_manager.shift_player(1,0);
-        camera_destination.0.x += arena_size.x*camera_transform.scale.x;
-    }
-
-    if camera_destination.0.x - player_transform.translation.x > 
-        arena_size.x/2. * camera_transform.scale.x {
-        chunk_manager.shift_player(-1,0);
-        camera_destination.0.x -= arena_size.x*camera_transform.scale.x;
-    }
-
-    if camera_destination.0.y - player_transform.translation.y + player_height.0 < 
-        -arena_size.y/2. * camera_transform.scale.y {
-        chunk_manager.shift_player(0,1);
-        camera_destination.0.y += arena_size.y*camera_transform.scale.y;
-    }
-
-    if camera_destination.0.y - player_transform.translation.y + player_height.0 > 
-        arena_size.y/2. * camera_transform.scale.y {
-        chunk_manager.shift_player(0,-1);
-        camera_destination.0.y -= arena_size.y*camera_transform.scale.y;
-    }
+    chunk_manager.player_chunk = location_to_chunk((player_transform.translation.x,
+        player_transform.translation.y-player_height.0));
 }
 
 pub fn moving_camera(
-    mut camera_query: Query<(&mut Transform,&CameraDestination),With<Camera>>,
+    mut camera_query: Query<&mut Transform,With<MoveToActiveChunk>>,
+    chunk_manager: Res<ChunkManager>,
 ) {
     let speed = 3.;
-    let (mut trans,dest) = camera_query.single_mut();
-    if trans.translation.x < dest.0.x {
-        trans.translation.x = dest.0.x.min(trans.translation.x + speed);
+    let mut trans = camera_query.single_mut();
+
+    let dest = chunk_to_location(chunk_manager.active_chunk);
+
+    if trans.translation.x < dest.0 {
+        trans.translation.x = dest.0.min(trans.translation.x + speed);
     }
-    if trans.translation.x > dest.0.x {
-        trans.translation.x = dest.0.x.max(trans.translation.x - speed);
+    if trans.translation.x > dest.0 {
+        trans.translation.x = dest.0.max(trans.translation.x - speed);
     }
-    if trans.translation.y < dest.0.y {
-        trans.translation.y = dest.0.y.min(trans.translation.y + speed);
+    if trans.translation.y < dest.1 {
+        trans.translation.y = dest.1.min(trans.translation.y + speed);
     }
-    if trans.translation.y > dest.0.y {
-        trans.translation.y = dest.0.y.max(trans.translation.y - speed);
+    if trans.translation.y > dest.1 {
+        trans.translation.y = dest.1.max(trans.translation.y - speed);
     }
 }
 
 
 #[derive(Component)]
-pub struct CameraDestination(pub Vec2);
+pub struct MoveToActiveChunk;
