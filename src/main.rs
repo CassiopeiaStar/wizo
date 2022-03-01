@@ -12,6 +12,7 @@ mod hitboxes;
 mod components;
 mod tile_factory;
 mod chunks;
+mod text_box;
 
 mod constants;
 
@@ -19,6 +20,7 @@ mod constants;
 pub enum GameState{
     StartMenu,
     Game,
+    TextBox,
 }
 
 
@@ -36,8 +38,8 @@ fn main() {
         .add_plugin(
             RonAssetPlugin::<chunks::ChunkMap>::new(&["chunkmap"])
         )
-        .add_plugin(bevy_ninepatch::NinePatchPlugin::<()>::default())
         .add_plugin(menu::MenuPlugin)
         .add_plugin(game::GamePlugin)
+        .add_plugin(text_box::TextBoxPlugin)
         .run();
 }

@@ -52,6 +52,7 @@ pub fn game_input(
         }
         if button_inputs.just_pressed(GamepadButton(gamepad,GamepadButtonType::South)) {
             accept = true;
+            chat = true;
         }
         if button_inputs.just_pressed(GamepadButton(gamepad,GamepadButtonType::West)) {
             attack = true;

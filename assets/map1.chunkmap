@@ -32,9 +32,9 @@
     ),
     (1,0): ChunkData(
       custom_tiles: {
-        '1':Sign("Text1"),
-        '2':Sign("Text2"),
-        '3':Sign("Text3"),
+        '1':Sign("This is a sign, isn't it nice?"),
+        '2':Sign("There are 3 signs in this chunk."),
+        '3':Sign("Hi Kate!"),
         },
       tiles:r#"
         ..............

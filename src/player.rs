@@ -1,6 +1,8 @@
 
 use bevy::prelude::*;
 
+use crate::GameState;
+use crate::text_box::*;
 use crate::components::*;
 use crate::animation::*;
 use crate::resources::*;
@@ -187,6 +189,8 @@ pub fn player_attack_system(
 }
 
 pub fn sign_reading_system(
+    mut cmd: Commands,
+    mut state: ResMut<State<GameState>>,
     input_state: ResMut<InputState>,
     player: Query<(&Player,&GlobalTransform),Without<Sign>>,
     signs: Query<(&Sign,&GlobalTransform),Without<Player>>
@@ -197,7 +201,11 @@ pub fn sign_reading_system(
         for (sign,sign_transform) in signs.iter() {
             if (player_transform.translation.x - sign_transform.translation.x).abs() < distance &&
                 (player_transform.translation.y - sign_transform.translation.y).abs() < distance {
-                    dbg!(sign);
+                    cmd.insert_resource(TextBoxStateData{
+                        text: vec![sign.0.clone()],
+                        entities: Vec::new()
+                    });
+                    let push_result = state.push(GameState::TextBox);
                 }
 
         }
