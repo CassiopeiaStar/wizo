@@ -155,21 +155,21 @@ pub fn player_attack_system(
             PlayerState::Standing(dir) | PlayerState::Walking(dir) => {
                 let transform = match dir {
                     Dir::N => Transform {
-                        translation: Vec3::new(0.,-8.,-0.1),
+                        translation: Vec3::new(0.,-8.,-0.001),
                         rotation: Quat::from_rotation_z(std::f32::consts::PI/2.),
                         ..Default::default()
                     },
                     Dir::E => Transform {
-                        translation: Vec3::new(0.,-8.,0.1),
+                        translation: Vec3::new(0.,-8.,0.001),
                         ..Default::default()
                     },
                     Dir::S => Transform {
-                        translation: Vec3::new(0.,-8.,0.1),
+                        translation: Vec3::new(0.,-8.,0.001),
                         rotation: Quat::from_rotation_z(-std::f32::consts::PI/2.),
                         ..Default::default()
                     },
                     Dir::W => Transform {
-                        translation: Vec3::new(0.,-8.,0.1),
+                        translation: Vec3::new(0.,-8.,0.001),
                         rotation: Quat::from_rotation_z(std::f32::consts::PI),
                         ..Default::default()
                     }
