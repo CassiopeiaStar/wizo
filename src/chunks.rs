@@ -1,4 +1,5 @@
 
+use std::f32::consts::PI;
 use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::resources::*;
@@ -16,6 +17,8 @@ pub enum TileKind {
     Tree,
     Bush,
     Sign(String),
+    Path(usize,u8),
+    Flower,
 }
 
 impl TileKind {
@@ -26,6 +29,9 @@ impl TileKind {
             }
             'T' => {
                 Some(TileKind::Tree)
+            }
+            'f' => {
+                Some(TileKind::Flower)
             }
             _ => {None}
         }
@@ -108,6 +114,7 @@ pub fn load_chunk(
     atlas_map: &AtlasMap,
     chunk:     (i32,i32),
     chunkmap: &ChunkMap,
+    animation_map: &AnimationMap,
 ) -> Entity{
     cmd.spawn().insert(GlobalTransform::default())
     .insert(Transform::from_translation(Vec3::new(
@@ -135,6 +142,25 @@ pub fn load_chunk(
                             text
                         ));
                     }
+                    TileKind::Path(texture_atlas_index,rotation) => {
+                        let mut transform = tile_transform(x,y);
+                        transform.rotation = Quat::from_rotation_z(
+                            rotation as f32 * PI/2.
+                        );
+                        root.spawn_bundle(PathBundle::new(
+                            &atlas_map,
+                            transform,
+                            texture_atlas_index
+                        ));
+                    }
+                    TileKind::Flower => {
+                        dbg!();
+                        root.spawn_bundle(FlowerBundle::new(
+                            &atlas_map,
+                            &animation_map,
+                            tile_transform(x,y),
+                        ));
+                    }
                 }
             }
         };
@@ -152,6 +178,7 @@ pub fn chunk_manager(
     atlas_map: Res<AtlasMap>,
     chunk_assets: Res<Assets<ChunkMap>>,
     game_data: Res<GameData>,
+    animation_map: Res<AnimationMap>,
 ) {
     if let Some(chunkmap) = chunk_assets.get(&game_data.chunkmap_handle) {
         if chunk_manager.player_chunk != chunk_manager.active_chunk {
@@ -168,7 +195,7 @@ pub fn chunk_manager(
                 for j in (y-buffer)..=(y+buffer) {
                     let chunk = (i,j);
                     if !chunk_manager.is_loaded(&chunk) {
-                        let chunk_root = load_chunk(&mut cmd,&atlas_map,chunk,chunkmap);
+                        let chunk_root = load_chunk(&mut cmd,&atlas_map,chunk,chunkmap,&animation_map);
                         chunk_manager.loaded_chunks.push(((i,j),chunk_root));
                     }
                     neighbors.push(chunk);

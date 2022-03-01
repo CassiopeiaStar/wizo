@@ -20,6 +20,8 @@ pub enum AtlasName {
     NoTex,
     Tree,
     Sign,
+    DirtPath,
+    Flower,
 }
 
 pub struct AtlasMap(pub HashMap<AtlasName,Handle<TextureAtlas>>);
@@ -68,6 +70,12 @@ impl AtlasMap {
         load_texture(Sign,
                      "sprites/sign.png",
                      Vec2::new(16.,32.),1,1);
+        load_texture(DirtPath,
+                     "sprites/dirt-path.png",
+                     Vec2::new(16.,16.),4,4);
+        load_texture(Flower,
+                     "sprites/flower-1.png",
+                     Vec2::new(16.,16.),4,1);
 
         AtlasMap(hash_map)
     }
@@ -83,6 +91,7 @@ pub enum AnimationName {
     Standing(Dir),
     Walking(Dir),
     Sword,
+    Flower,
 }
 
 pub struct AnimationMap(pub HashMap<AnimationName,Animation>);
@@ -204,6 +213,36 @@ impl AnimationMap {
                     AnimAction::DespawnRecursive
                 ])
             ])
+        );
+
+        let repeating_animation = |
+            atlas_name:AtlasName,
+            steps:usize,
+            interval:f32,
+            flip_x:bool,
+        | {
+            let mut frames: Vec<Frame> = (0 as usize..steps).map(|i|{
+                Frame{
+                    start:0.+(i as f32*interval),
+                    actions: vec![AnimAction::UpdateSprite(TextureAtlasSprite {
+                        index:i,
+                        flip_x,
+                        ..Default::default()
+                    }),
+                    AnimAction::UpdateAtlas(ga(atlas_name))]
+                }
+            }).collect();
+
+            frames.push(Frame{
+                start: interval * steps as f32,
+                actions: vec![AnimAction::Repeat]
+            });
+
+            Animation::new(frames)
+        };
+        hash_map.insert(
+            AnimationName::Flower,
+            repeating_animation(AtlasName::Flower,4,2.,false)
         );
 
         AnimationMap(hash_map)
